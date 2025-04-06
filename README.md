@@ -1,4 +1,4 @@
-Структура проекта:
+# Структура проекта:
 
 ```
 .
@@ -9,15 +9,15 @@
 │   ├── config
 │   │   └── config.go
 │   ├── handler
-│   │   ├── handler_test.go
-│   │   └── handler.go
+│   │   ├── handler.go
+│   │   └── handler_test.go
 │   ├── storage
 │   │   ├── memory
 │   │   │   ├── memory.go
 │   │   │   └── memory_test.go
 │   │   ├── postgres
 │   │   │   ├── postgres.go
-│   │   │   └── postgres.go
+│   │   │   └── postgres_test.go
 │   │   └── storage.go
 │   └── service
 │       ├── service.go
@@ -47,14 +47,19 @@ git clone https://github.com/KarpovDaniel/url-shortener.git
 make tests
 ```
 
+## Покрытие тестами
+```
+make tests-coverage
+```
+
 ## memory: 
 ```
-make compose-memory-up
+make memory
 ```
 
 ## postgres: 
 ```
-make compose-postgres-up
+make postgres
 ```
 
 ## Остановка: 
@@ -69,25 +74,25 @@ make down
 POST:
 
 ```
-curl -X POST -H "Content-Type: application/json" -d '{"original_url": "https://example.com"}' http://localhost:8080
+curl -X POST -d "url=https://example.com" http://localhost:8080
 ```
 
 Пример ответа:
 
 ```
-{"short_url":"knFxGJkkDb"}
+_shortURL_
 ```
 
 GET:
 
 ```
-curl http://localhost:8080/knFxGJkkDb
+curl http://localhost:8080/_shortURL_
 ```
 
 Пример ответа:
 
 ```
-{"original_url":"https://example.comm"}
+https://example.com
 ```
 
 Пример ответа при Invalid URL:

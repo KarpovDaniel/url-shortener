@@ -1,16 +1,20 @@
 ## Запуск тестов
 tests:
-	# test ./...
+	go test -v ./...
+
+## Покрытие тестами
+tests-coverage:
+	go test -cover ./...
 
 ## Запуск с postgres-хранилищем
-compose-postgres-up:
+postgres:
 	docker-compose --profile postgres up --build
 
 ## Запуск с memory-хранилищем
-compose-memory-up:
+memory:
 	docker-compose --profile memory up --build
 
 ## Остановка Docker Compose
-compose-down:
+down:
 	docker-compose --profile postgres down
 	docker-compose --profile memory down

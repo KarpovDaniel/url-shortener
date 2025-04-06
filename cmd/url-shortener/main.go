@@ -23,7 +23,8 @@ func main() {
 	}
 
 	var app_storage storage.Storage
-	if cfg.StorageType == "postgres" {
+	switch cfg.StorageType {
+	case "postgres":
 		log.Println("DB_HOST:", cfg.DBHost)
 		dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 			cfg.DBHost, cfg.DBPort, cfg.DBUser, cfg.DBPassword, cfg.DBName)
@@ -31,15 +32,14 @@ func main() {
 		if err != nil {
 			log.Fatal("Failed to connect to database:", err)
 		}
-		defer db.Close()
+		defer db.Close() //nolint:errcheck
 
-		// Применение миграций
 		if err := goose.Up(db, "migrations"); err != nil {
 			log.Fatal("Failed to apply migrations:", err)
 		}
-		app_storage = postgres.NewPostgresStorage(db)
-	} else {
-		app_storage = memory.NewMemoryStorage()
+		app_storage = postgres.NewPostgres(db)
+	case "memory":
+		app_storage = memory.NewMemory()
 	}
 
 	svc := service.NewService(app_storage)

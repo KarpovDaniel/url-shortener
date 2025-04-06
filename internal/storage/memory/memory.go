@@ -5,27 +5,26 @@ import (
 	"sync"
 )
 
-// MemoryStorage представляет потокобезопасное хранилище URL.
-type MemoryStorage struct {
-	shortToOriginal map[string]string // Короткий URL -> Оригинальный URL
-	originalToShort map[string]string // Оригинальный URL -> Короткий URL
-	mu              sync.RWMutex      // Мьютекс для синхронизации
+// Memory представляет потокобезопасное хранилище URL.
+type Memory struct {
+	shortToOriginal map[string]string
+	originalToShort map[string]string
+	mu              sync.RWMutex
 }
 
-// NewMemoryStorage создаёт новое экземпляр хранилища.
-func NewMemoryStorage() *MemoryStorage {
-	return &MemoryStorage{
+// NewMemory создаёт новое экземпляр хранилища.
+func NewMemory() *Memory {
+	return &Memory{
 		shortToOriginal: make(map[string]string),
 		originalToShort: make(map[string]string),
 	}
 }
 
 // Save сохраняет пару короткого и оригинального URL.
-func (s *MemoryStorage) Save(shortURL, originalURL string) (string, error) {
-	s.mu.Lock()         // Блокировка для записи
-	defer s.mu.Unlock() // Разблокировка после завершения
+func (s *Memory) Save(shortURL, originalURL string) (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	// Проверка на дубликаты
 	if _, exists := s.shortToOriginal[shortURL]; exists {
 		return "", errors.New("short URL already exists")
 	}
@@ -33,16 +32,15 @@ func (s *MemoryStorage) Save(shortURL, originalURL string) (string, error) {
 		return actualShortURL, nil
 	}
 
-	// Сохранение данных
 	s.shortToOriginal[shortURL] = originalURL
 	s.originalToShort[originalURL] = shortURL
 	return shortURL, nil
 }
 
 // Get возвращает оригинальный URL по короткому URL.
-func (s *MemoryStorage) Get(shortURL string) (string, error) {
-	s.mu.RLock()         // Блокировка для чтения
-	defer s.mu.RUnlock() // Разблокировка после завершения
+func (s *Memory) Get(shortURL string) (string, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
 	originalURL, exists := s.shortToOriginal[shortURL]
 	if !exists {

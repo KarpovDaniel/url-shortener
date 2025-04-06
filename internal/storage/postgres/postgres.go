@@ -9,15 +9,15 @@ import (
 	"url-shortener/internal/storage"
 )
 
-type PostgresStorage struct {
+type Postgres struct {
 	db *sql.DB
 }
 
-func NewPostgresStorage(db *sql.DB) *PostgresStorage {
-	return &PostgresStorage{db: db}
+func NewPostgres(db *sql.DB) *Postgres {
+	return &Postgres{db: db}
 }
 
-func (s *PostgresStorage) Save(shortURL, originalURL string) (string, error) {
+func (s *Postgres) Save(shortURL, originalURL string) (string, error) {
 	query := squirrel.Insert("urls").
 		Columns("short_url", "original_url").
 		Values(shortURL, originalURL)
@@ -39,7 +39,7 @@ func (s *PostgresStorage) Save(shortURL, originalURL string) (string, error) {
 	return "", err
 }
 
-func (s *PostgresStorage) Get(shortURL string) (string, error) {
+func (s *Postgres) Get(shortURL string) (string, error) {
 	var originalURL string
 	query := squirrel.Select("original_url").
 		From("urls").

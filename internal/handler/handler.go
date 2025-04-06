@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"url-shortener/internal/storage"
 
@@ -19,20 +19,17 @@ func NewHandler(service *service.Service) *Handler {
 }
 
 func (h *Handler) CreateURL(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		OriginalURL string `json:"original_url"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
+	originalURL := r.FormValue("url")
+	if originalURL == "" {
+		http.Error(w, "Missing original_url", http.StatusBadRequest)
 		return
 	}
-	shortURL, err := h.service.Create(req.OriginalURL)
+	shortURL, err := h.service.Create(originalURL)
 	if err != nil {
 		http.Error(w, "Failed to create short URL: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"short_url": shortURL})
+	fmt.Fprint(w, shortURL) //nolint:errcheck
 }
 
 func (h *Handler) GetURL(w http.ResponseWriter, r *http.Request) {
@@ -47,8 +44,7 @@ func (h *Handler) GetURL(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"original_url": originalURL})
+	fmt.Fprint(w, originalURL) //nolint:errcheck
 }
 
 func (h *Handler) SetupRoutes() *mux.Router {
