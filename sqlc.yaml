@@ -1,0 +1,9 @@
+version: "2"
+sql:
+  - schema: "migrations/00001_create_urls_table.sql"
+    queries: "query.sql"
+    engine: "postgresql"
+    gen:
+      go:
+        package: "db"
+        out: "internal/storage/postgres/db"

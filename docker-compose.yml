@@ -1,0 +1,35 @@
+services:
+  app-memory:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - STORAGE_TYPE=memory
+    profiles:
+      - memory
+
+  app-postgres:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - STORAGE_TYPE=postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - postgres
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - postgres
