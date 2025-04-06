@@ -22,7 +22,7 @@ func main() {
 		log.Fatal("Failed to load config:", err)
 	}
 
-	var storage storage.Storage
+	var app_storage storage.Storage
 	if cfg.StorageType == "postgres" {
 		log.Println("DB_HOST:", cfg.DBHost)
 		dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
@@ -37,12 +37,12 @@ func main() {
 		if err := goose.Up(db, "migrations"); err != nil {
 			log.Fatal("Failed to apply migrations:", err)
 		}
-		storage = postgres.NewPostgresStorage(db)
+		app_storage = postgres.NewPostgresStorage(db)
 	} else {
-		storage = memory.NewMemoryStorage()
+		app_storage = memory.NewMemoryStorage()
 	}
 
-	svc := service.NewService(storage)
+	svc := service.NewService(app_storage)
 	h := handler.NewHandler(svc)
 	r := h.SetupRoutes()
 

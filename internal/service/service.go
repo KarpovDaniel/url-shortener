@@ -2,7 +2,6 @@ package service
 
 import (
 	"crypto/rand"
-	"errors"
 	"math/big"
 	"strings"
 
@@ -23,34 +22,18 @@ func NewService(storage storage.Storage) *Service {
 }
 
 func (s *Service) Create(originalURL string) (shortURL string, err error) {
-	// Проверяем, существует ли originalURL
-	shortURL, err = s.storage.FindByOriginalURL(originalURL)
-	if err == nil {
-		return shortURL, nil
-	}
-	if !errors.Is(err, storage.ErrNotFound) {
-		return "", err
-	}
-	// Если не найден, генерируем новый shortURL
 	for {
 		shortURL, err = generateShortURL()
 		if err != nil {
 			return "", err
 		}
-		err = s.storage.Save(shortURL, originalURL)
+		shortURL, err = s.storage.Save(shortURL, originalURL)
 		if err == nil {
 			return shortURL, nil
 		}
 		// Обрабатываем возможные конфликты shortURL
 		if strings.Contains(err.Error(), "short URL") || strings.Contains(err.Error(), "urls_pkey") {
 			continue
-		}
-		// Обрабатываем случай, если originalURL был добавлен параллельно
-		if strings.Contains(err.Error(), "original URL") || strings.Contains(err.Error(), "urls_original") {
-			shortURL, err = s.storage.FindByOriginalURL(originalURL)
-			if err == nil {
-				return shortURL, nil
-			}
 		}
 		return "", err
 	}
