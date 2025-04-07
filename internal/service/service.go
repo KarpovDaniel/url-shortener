@@ -13,14 +13,17 @@ const (
 	chars          = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
 )
 
+// Service реализует бизнес-логику сервиса сокращения URL
 type Service struct {
 	storage storage.Storage
 }
 
+// NewService создает новый экземпляр сервиса с заданным хранилищем
 func NewService(storage storage.Storage) *Service {
 	return &Service{storage: storage}
 }
 
+// Create генерирует и сохраняет короткий URL для оригинального URL
 func (s *Service) Create(originalURL string) (shortURL string, err error) {
 	for {
 		shortURL, err = generateShortURL()
@@ -31,7 +34,6 @@ func (s *Service) Create(originalURL string) (shortURL string, err error) {
 		if err == nil {
 			return shortURL, nil
 		}
-		// Обрабатываем возможные конфликты shortURL
 		if strings.Contains(err.Error(), "short URL") || strings.Contains(err.Error(), "urls_pkey") {
 			continue
 		}
@@ -39,10 +41,12 @@ func (s *Service) Create(originalURL string) (shortURL string, err error) {
 	}
 }
 
+// Get возвращает оригинальный URL по короткому URL
 func (s *Service) Get(shortURL string) (string, error) {
 	return s.storage.Get(shortURL)
 }
 
+// generateShortURL генерирует случайный короткий URL заданной длины
 func generateShortURL() (string, error) {
 	var shortURL string
 	for i := 0; i < shortURLLength; i++ {

@@ -9,14 +9,17 @@ import (
 	"url-shortener/internal/storage"
 )
 
+// Postgres реализует хранилище URL на базе PostgreSQL
 type Postgres struct {
 	db *sql.DB
 }
 
+// NewPostgres создает новый экземпляр PostgreSQL-хранилища
 func NewPostgres(db *sql.DB) *Postgres {
 	return &Postgres{db: db}
 }
 
+// Save сохраняет пару URL в БД, возвращает существующий shortURL если originalURL уже есть
 func (s *Postgres) Save(shortURL, originalURL string) (string, error) {
 	query := squirrel.Insert("urls").
 		Columns("short_url", "original_url").
@@ -39,6 +42,7 @@ func (s *Postgres) Save(shortURL, originalURL string) (string, error) {
 	return "", err
 }
 
+// Get возвращает оригинальный URL по его короткой версии из БД
 func (s *Postgres) Get(shortURL string) (string, error) {
 	var originalURL string
 	query := squirrel.Select("original_url").

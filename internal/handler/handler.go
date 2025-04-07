@@ -10,14 +10,17 @@ import (
 	"url-shortener/internal/service"
 )
 
+// Handler обрабатывает HTTP-запросы для сервиса сокращения URL
 type Handler struct {
 	service *service.Service
 }
 
+// NewHandler создаёт экземпляр обработчика с зависимостью от сервиса
 func NewHandler(service *service.Service) *Handler {
 	return &Handler{service: service}
 }
 
+// CreateURL обрабатывает POST-запрос для создания сокращённой ссылки
 func (h *Handler) CreateURL(w http.ResponseWriter, r *http.Request) {
 	originalURL := r.FormValue("url")
 	if originalURL == "" {
@@ -32,6 +35,7 @@ func (h *Handler) CreateURL(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, shortURL) //nolint:errcheck
 }
 
+// GetURL обрабатывает GET-запрос для получения оригинальной ссылки по короткому ключу
 func (h *Handler) GetURL(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	shortURL := vars["shortURL"]
@@ -47,6 +51,7 @@ func (h *Handler) GetURL(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, originalURL) //nolint:errcheck
 }
 
+// SetupRoutes настраивает маршруты API с использованием роутера gorilla/mux
 func (h *Handler) SetupRoutes() *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/", h.CreateURL).Methods("POST")

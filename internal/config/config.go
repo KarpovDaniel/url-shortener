@@ -6,6 +6,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// Config содержит конфигурационные параметры приложения
 type Config struct {
 	StorageType string
 	DBHost      string
@@ -16,6 +17,7 @@ type Config struct {
 	ServerPort  string
 }
 
+// LoadConfig загружает конфигурацию из .env файла и переменных окружения
 func LoadConfig() (*Config, error) {
 	err := godotenv.Load()
 	if err != nil {

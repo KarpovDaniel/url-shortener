@@ -5,14 +5,14 @@ import (
 	"sync"
 )
 
-// Memory представляет потокобезопасное хранилище URL.
+// Memory представляет потокобезопасное in-memory хранилище URL
 type Memory struct {
 	shortToOriginal map[string]string
 	originalToShort map[string]string
 	mu              sync.RWMutex
 }
 
-// NewMemory создаёт новое экземпляр хранилища.
+// NewMemory создает новое in-memory хранилище URL
 func NewMemory() *Memory {
 	return &Memory{
 		shortToOriginal: make(map[string]string),
@@ -20,7 +20,7 @@ func NewMemory() *Memory {
 	}
 }
 
-// Save сохраняет пару короткого и оригинального URL.
+// Save сохраняет пару URL, возвращает существующий короткий URL если оригинальный уже сохранен
 func (s *Memory) Save(shortURL, originalURL string) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -37,7 +37,7 @@ func (s *Memory) Save(shortURL, originalURL string) (string, error) {
 	return shortURL, nil
 }
 
-// Get возвращает оригинальный URL по короткому URL.
+// Get возвращает оригинальный URL по его короткой версии
 func (s *Memory) Get(shortURL string) (string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
