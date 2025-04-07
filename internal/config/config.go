@@ -15,6 +15,7 @@ type Config struct {
 	DBPassword  string
 	DBName      string
 	ServerPort  string
+	GRPCPort    string
 }
 
 // LoadConfig загружает конфигурацию из .env файла и переменных окружения
@@ -31,5 +32,6 @@ func LoadConfig() (*Config, error) {
 		DBPassword:  os.Getenv("DB_PASSWORD"),
 		DBName:      os.Getenv("DB_NAME"),
 		ServerPort:  os.Getenv("SERVER_PORT"),
+		GRPCPort:    os.Getenv("GRPC_PORT"),
 	}, nil
 }

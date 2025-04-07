@@ -34,12 +34,6 @@
 └── README.md
 ```
 
-# Клонируйте проект
-
-```
-git clone https://github.com/KarpovDaniel/url-shortener.git
-```
-
 # Запуск сервера:
 
 ## Запуск тестов:
@@ -68,6 +62,44 @@ make down
 ```
 
 # Примеры запросов:
+
+## gRPC:
+
+CreateLink:
+
+```
+grpcurl -plaintext -d '{"original_url": "https://example.com"}' localhost:50051 proto.URLShortener/CreateURL
+```
+
+Пример ответа:
+
+```
+{
+  "shortUrl": "_shortURL_"
+}
+```
+
+GetLink :
+
+```
+grpcurl -plaintext -d '{"short_url": "_shortURL_"}' localhost:50051 proto.URLShortener/GetURL
+```
+
+Пример ответа:
+
+```
+{
+  "originalUrl": "https://example.com"
+}
+```
+
+Пример ответа когда не надено:
+
+```
+{
+  "error": "short URL not found"
+}
+```
 
 ## HTTP API:
 

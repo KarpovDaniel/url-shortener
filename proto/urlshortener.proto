@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "./proto";
+
+// Сервис для работы с URL
+service URLShortener {
+  // Сохранить URL и получить короткий идентификатор
+  rpc CreateURL (CreateURLRequest) returns (CreateURLResponse) {}
+  // Получить оригинальный URL по короткому идентификатору
+  rpc GetURL (GetURLRequest) returns (GetURLResponse) {}
+}
+
+// Запрос для сокращения URL
+message CreateURLRequest {
+  string original_url = 1;
+}
+
+// Ответ с коротким URL
+message CreateURLResponse {
+  string short_url = 1;
+  string error = 2; // Поле для ошибок, если они есть
+}
+
+// Запрос для получения оригинального URL
+message GetURLRequest {
+  string short_url = 1;
+}
+
+// Ответ с оригинальным URL
+message GetURLResponse {
+  string original_url = 1;
+  string error = 2; // Поле для ошибок, если они есть
+}

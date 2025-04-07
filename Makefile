@@ -8,11 +8,11 @@ tests-coverage:
 
 ## Запуск с postgres-хранилищем
 postgres:
-	docker-compose --profile postgres up --build
+	COMPOSE_BAKE=true docker-compose --profile postgres up --build
 
 ## Запуск с memory-хранилищем
 memory:
-	docker-compose --profile memory up --build
+	COMPOSE_BAKE=true docker-compose --profile memory up --build
 
 ## Остановка Docker Compose
 down:

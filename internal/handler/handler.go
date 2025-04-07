@@ -4,54 +4,71 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"url-shortener/internal/storage"
+	"url-shortener/proto"
 
 	"github.com/gorilla/mux"
 	"url-shortener/internal/service"
+	"url-shortener/internal/storage"
 )
 
-// Handler обрабатывает HTTP-запросы для сервиса сокращения URL
+// Handler обрабатывает HTTP-запросы для сервиса сокращения ссылок
 type Handler struct {
 	service *service.Service
 }
 
-// NewHandler создаёт экземпляр обработчика с зависимостью от сервиса
+// NewHandler создаёт экземпляр обработчика с переданным сервисом
 func NewHandler(service *service.Service) *Handler {
 	return &Handler{service: service}
 }
 
-// CreateURL обрабатывает POST-запрос для создания сокращённой ссылки
+// CreateURL обрабатывает POST-запрос для создания короткой ссылки
 func (h *Handler) CreateURL(w http.ResponseWriter, r *http.Request) {
 	originalURL := r.FormValue("url")
 	if originalURL == "" {
-		http.Error(w, "Missing original_url", http.StatusBadRequest)
+		http.Error(w, "Отсутствует параметр url", http.StatusBadRequest)
 		return
 	}
-	shortURL, err := h.service.Create(originalURL)
+
+	resp, err := h.service.CreateURL(r.Context(), &proto.CreateURLRequest{
+		OriginalUrl: originalURL,
+	})
 	if err != nil {
-		http.Error(w, "Failed to create short URL: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Не удалось создать короткую ссылку: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Fprint(w, shortURL) //nolint:errcheck
+	if resp.Error != "" {
+		http.Error(w, resp.Error, http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Fprintln(w, resp.ShortUrl)
 }
 
-// GetURL обрабатывает GET-запрос для получения оригинальной ссылки по короткому ключу
+// GetURL обрабатывает GET-запрос для получения оригинальной ссылки по короткой
 func (h *Handler) GetURL(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	shortURL := vars["shortURL"]
-	originalURL, err := h.service.Get(shortURL)
+
+	resp, err := h.service.GetURL(r.Context(), &proto.GetURLRequest{
+		ShortUrl: shortURL,
+	})
 	if err != nil {
+		http.Error(w, "Внутренняя ошибка сервера", http.StatusInternalServerError)
+		return
+	}
+	if resp.Error != "" {
 		if errors.Is(err, storage.ErrNotFound) {
-			http.Error(w, "URL not found", http.StatusNotFound)
+			http.Error(w, "Ссылка не найдена", http.StatusNotFound)
 		} else {
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
+			http.Error(w, resp.Error, http.StatusInternalServerError)
 		}
 		return
 	}
-	fmt.Fprint(w, originalURL) //nolint:errcheck
+
+	fmt.Fprintln(w, resp.OriginalUrl)
 }
 
-// SetupRoutes настраивает маршруты API с использованием роутера gorilla/mux
+// SetupRoutes настраивает маршруты API с использованием маршрутизатора gorilla/mux
 func (h *Handler) SetupRoutes() *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/", h.CreateURL).Methods("POST")

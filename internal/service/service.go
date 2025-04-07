@@ -1,11 +1,13 @@
 package service
 
 import (
+	"context"
 	"crypto/rand"
 	"math/big"
 	"strings"
 
 	"url-shortener/internal/storage"
+	"url-shortener/proto"
 )
 
 const (
@@ -13,37 +15,54 @@ const (
 	chars          = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
 )
 
-// Service реализует бизнес-логику сервиса сокращения URL
+// Service реализует интерфейс URLShortenerServer
 type Service struct {
+	proto.UnimplementedURLShortenerServer
 	storage storage.Storage
 }
 
-// NewService создает новый экземпляр сервиса с заданным хранилищем
+// NewService создаёт новый экземпляр сервиса с переданным хранилищем
 func NewService(storage storage.Storage) *Service {
 	return &Service{storage: storage}
 }
 
-// Create генерирует и сохраняет короткий URL для оригинального URL
-func (s *Service) Create(originalURL string) (shortURL string, err error) {
+// CreateURL реализует gRPC-метод для создания короткой ссылки
+func (s *Service) CreateURL(_ context.Context, req *proto.CreateURLRequest) (*proto.CreateURLResponse, error) {
+	originalURL := req.GetOriginalUrl()
 	for {
-		shortURL, err = generateShortURL()
+		shortURL, err := generateShortURL()
 		if err != nil {
-			return "", err
+			return &proto.CreateURLResponse{
+				Error: err.Error(),
+			}, nil
 		}
 		shortURL, err = s.storage.Save(shortURL, originalURL)
 		if err == nil {
-			return shortURL, nil
+			return &proto.CreateURLResponse{
+				ShortUrl: shortURL,
+			}, nil
 		}
 		if strings.Contains(err.Error(), "short URL") || strings.Contains(err.Error(), "urls_pkey") {
-			continue
+			continue // если короткая ссылка уже существует — сгенерировать новую
 		}
-		return "", err
+		return &proto.CreateURLResponse{
+			Error: err.Error(),
+		}, nil
 	}
 }
 
-// Get возвращает оригинальный URL по короткому URL
-func (s *Service) Get(shortURL string) (string, error) {
-	return s.storage.Get(shortURL)
+// GetURL реализует gRPC-метод для получения оригинального URL по короткому
+func (s *Service) GetURL(_ context.Context, req *proto.GetURLRequest) (*proto.GetURLResponse, error) {
+	shortURL := req.GetShortUrl()
+	originalURL, err := s.storage.Get(shortURL)
+	if err != nil {
+		return &proto.GetURLResponse{
+			Error: err.Error(),
+		}, nil
+	}
+	return &proto.GetURLResponse{
+		OriginalUrl: originalURL,
+	}, nil
 }
 
 // generateShortURL генерирует случайный короткий URL заданной длины

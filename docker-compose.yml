@@ -3,6 +3,7 @@ services:
     build: .
     ports:
       - "8080:8080"
+      - "50051:50051"
     environment:
       - STORAGE_TYPE=memory
     profiles:
@@ -12,6 +13,7 @@ services:
     build: .
     ports:
       - "8080:8080"
+      - "50051:50051"
     environment:
       - STORAGE_TYPE=postgres
     depends_on:

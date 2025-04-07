@@ -21,7 +21,9 @@ func NewPostgres(db *sql.DB) *Postgres {
 
 // Save сохраняет пару URL в БД, возвращает существующий shortURL если originalURL уже есть
 func (s *Postgres) Save(shortURL, originalURL string) (string, error) {
-	query := squirrel.Insert("urls").
+	query := squirrel.StatementBuilder.
+		PlaceholderFormat(squirrel.Dollar).
+		Insert("urls").
 		Columns("short_url", "original_url").
 		Values(shortURL, originalURL)
 
@@ -30,7 +32,9 @@ func (s *Postgres) Save(shortURL, originalURL string) (string, error) {
 		return shortURL, nil
 	}
 	if strings.Contains(err.Error(), "urls_original_url_key") {
-		query := squirrel.Select("short_url").
+		query := squirrel.StatementBuilder.
+			PlaceholderFormat(squirrel.Dollar).
+			Select("short_url").
 			From("urls").
 			Where(squirrel.Eq{"original_url": originalURL})
 
@@ -45,7 +49,9 @@ func (s *Postgres) Save(shortURL, originalURL string) (string, error) {
 // Get возвращает оригинальный URL по его короткой версии из БД
 func (s *Postgres) Get(shortURL string) (string, error) {
 	var originalURL string
-	query := squirrel.Select("original_url").
+	query := squirrel.StatementBuilder.
+		PlaceholderFormat(squirrel.Dollar).
+		Select("original_url").
 		From("urls").
 		Where(squirrel.Eq{"short_url": shortURL})
 

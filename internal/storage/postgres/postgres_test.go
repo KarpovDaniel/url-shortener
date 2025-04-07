@@ -37,7 +37,8 @@ func TestPostgres_Save(t *testing.T) {
 			setup: func(mock sqlmock.Sqlmock) {
 				query, args, _ := squirrel.Insert("urls").
 					Columns("short_url", "original_url").
-					Values("abc123", "https://example.com").ToSql()
+					Values("abc123", "https://example.com").
+					PlaceholderFormat(squirrel.Dollar).ToSql()
 				mock.ExpectExec(regexp.QuoteMeta(query)).
 					WithArgs(convertArgs(args)...).
 					WillReturnResult(sqlmock.NewResult(1, 1))
@@ -52,7 +53,8 @@ func TestPostgres_Save(t *testing.T) {
 			setup: func(mock sqlmock.Sqlmock) {
 				query, args, _ := squirrel.Insert("urls").
 					Columns("short_url", "original_url").
-					Values("xyz789", "https://example.com").ToSql()
+					Values("xyz789", "https://example.com").
+					PlaceholderFormat(squirrel.Dollar).ToSql()
 				mock.ExpectExec(regexp.QuoteMeta(query)).
 					WithArgs(convertArgs(args)...).
 					WillReturnError(errors.New("urls_original_url_key"))
@@ -75,7 +77,8 @@ func TestPostgres_Save(t *testing.T) {
 			setup: func(mock sqlmock.Sqlmock) {
 				query, args, _ := squirrel.Insert("urls").
 					Columns("short_url", "original_url").
-					Values("def456", "https://newexample.com").ToSql()
+					Values("def456", "https://newexample.com").
+					PlaceholderFormat(squirrel.Dollar).ToSql()
 				mock.ExpectExec(regexp.QuoteMeta(query)).
 					WithArgs(convertArgs(args)...).
 					WillReturnError(errors.New("database error"))

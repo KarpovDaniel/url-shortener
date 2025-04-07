@@ -1,10 +1,13 @@
 package service
 
 import (
+	"context"
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"url-shortener/internal/storage"
+	"url-shortener/proto"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // FakeStorage — поддельное хранилище для тестов
@@ -25,13 +28,14 @@ func (f *FakeStorage) Save(shortURL, originalURL string) (string, error) {
 		defer func() { f.err = nil }()
 		return "", f.err
 	}
-	if _, exists := f.storage[shortURL]; exists {
-		return "", errors.New("short URL already exists")
-	}
+	// Если URL уже сохранён — вернуть существующий короткий URL.
 	for k, v := range f.storage {
 		if v == originalURL {
 			return k, nil
 		}
+	}
+	if _, exists := f.storage[shortURL]; exists {
+		return "", errors.New("short URL already exists")
 	}
 	f.storage[shortURL] = originalURL
 	return shortURL, nil
@@ -45,18 +49,19 @@ func (f *FakeStorage) Get(shortURL string) (string, error) {
 	return originalURL, nil
 }
 
-func TestService_Create(t *testing.T) {
+func TestService_CreateURL(t *testing.T) {
 	tests := []struct {
 		name          string
 		originalURL   string
 		setup         func(*FakeStorage)
-		expectedShort string
+		expectedShort string // если не пустая — ожидается именно она
 		expectedErr   error
 	}{
 		{
-			name:          "Создание нового URL",
-			originalURL:   "https://example.com",
-			setup:         func(f *FakeStorage) {},
+			name:        "Создание нового URL",
+			originalURL: "https://example.com",
+			setup:       func(f *FakeStorage) {},
+			// Ожидается, что будет сгенерирован новый короткий URL случайной длины
 			expectedShort: "",
 			expectedErr:   nil,
 		},
@@ -64,19 +69,24 @@ func TestService_Create(t *testing.T) {
 			name:        "Повторное использование существующего URL",
 			originalURL: "https://example.com",
 			setup: func(f *FakeStorage) {
+				// Имитируем, что URL уже сохранён с коротким значением "abc123"
 				f.storage["abc123"] = "https://example.com"
 			},
 			expectedShort: "abc123",
 			expectedErr:   nil,
-		}, {
-			name:        "Конфликт короткого URL",
+		},
+		{
+			name:        "Конфликт короткого URL (повторная генерация)",
 			originalURL: "https://newexample.com",
 			setup: func(f *FakeStorage) {
+				// При первом вызове Save вернётся ошибка о конфликте,
+				// затем ошибка сбрасывается, и операция должна пройти успешно.
 				f.err = errors.New("short URL already exists")
 			},
 			expectedShort: "",
 			expectedErr:   nil,
-		}, {
+		},
+		{
 			name:        "Непредвиденная ошибка",
 			originalURL: "https://newexample.com",
 			setup: func(f *FakeStorage) {
@@ -93,26 +103,32 @@ func TestService_Create(t *testing.T) {
 			tt.setup(fakeStorage)
 
 			s := NewService(fakeStorage)
-			shortURL, err := s.Create(tt.originalURL)
-
+			req := &proto.CreateURLRequest{
+				OriginalUrl: tt.originalURL,
+			}
+			resp, err := s.CreateURL(context.Background(), req)
+			// Метод gRPC возвращает ошибку только при критических сбоях, остальные ошибки передаются в поле Error.
 			if tt.expectedErr != nil {
-				assert.Error(t, err)
-				assert.Equal(t, tt.expectedErr.Error(), err.Error())
-				assert.Empty(t, shortURL)
+				// Если ожидается ошибка, то err должен быть nil, а сообщение об ошибке в ответе должно совпадать.
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedErr.Error(), resp.Error)
+				assert.Empty(t, resp.ShortUrl)
 			} else {
 				assert.NoError(t, err)
+				assert.Empty(t, resp.Error)
 				if tt.expectedShort != "" {
-					assert.Equal(t, tt.expectedShort, shortURL)
+					assert.Equal(t, tt.expectedShort, resp.ShortUrl)
 				} else {
-					assert.Len(t, shortURL, shortURLLength)
-					assert.Regexp(t, "^[a-zA-Z0-9_]+$", shortURL)
+					// Проверяем, что сгенерированный короткий URL имеет нужную длину и соответствует шаблону.
+					assert.Len(t, resp.ShortUrl, shortURLLength)
+					assert.Regexp(t, "^[a-zA-Z0-9_]+$", resp.ShortUrl)
 				}
 			}
 		})
 	}
 }
 
-func TestService_Get(t *testing.T) {
+func TestService_GetURL(t *testing.T) {
 	tests := []struct {
 		name        string
 		shortURL    string
@@ -144,15 +160,19 @@ func TestService_Get(t *testing.T) {
 			tt.setup(fakeStorage)
 
 			s := NewService(fakeStorage)
-			originalURL, err := s.Get(tt.shortURL)
-
+			req := &proto.GetURLRequest{
+				ShortUrl: tt.shortURL,
+			}
+			resp, err := s.GetURL(context.Background(), req)
+			// Как и в CreateURL, ошибка в gRPC-методе передаётся через поле Error.
 			if tt.expectedErr != nil {
-				assert.Error(t, err)
-				assert.Equal(t, tt.expectedErr.Error(), err.Error())
-				assert.Empty(t, originalURL)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedErr.Error(), resp.Error)
+				assert.Empty(t, resp.OriginalUrl)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedURL, originalURL)
+				assert.Empty(t, resp.Error)
+				assert.Equal(t, tt.expectedURL, resp.OriginalUrl)
 			}
 		})
 	}
