@@ -9,8 +9,7 @@
 │   ├── config
 │   │   └── config.go
 │   ├── handler
-│   │   ├── handler.go
-│   │   └── handler_test.go
+│   │   └── handler.go
 │   ├── storage
 │   │   ├── memory
 │   │   │   ├── memory.go
